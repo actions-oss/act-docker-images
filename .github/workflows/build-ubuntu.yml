@@ -32,6 +32,9 @@ defaults:
   run:
     shell: sh
 
+# TODO fine tune this
+permissions: write-all
+
 jobs:
   build-base:
     name: Build base ${{ matrix.TAG }}
