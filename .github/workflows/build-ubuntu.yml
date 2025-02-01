@@ -33,7 +33,8 @@ defaults:
     shell: sh
 
 # TODO fine tune this
-permissions: write-all
+permissions:
+  packages: write
 
 jobs:
   build-base:
