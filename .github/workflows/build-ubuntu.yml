@@ -32,7 +32,6 @@ defaults:
   run:
     shell: sh
 
-# TODO fine tune this
 permissions:
   packages: write
 
@@ -62,7 +61,7 @@ jobs:
         with:
           go-version: '>=1.21.0'
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup buildah
         uses: ./.github/actions/buildah
@@ -252,6 +251,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '>=1.21.0'
+
+      - uses: actions/checkout@v4
 
       - name: Setup buildah
         uses: ./.github/actions/buildah
