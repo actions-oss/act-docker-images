@@ -21,7 +21,7 @@ env:
   IMAGE_LABEL_OWNER: ${{ github.repository_owner }}
   IMAGE_LABEL_REPO: ${{ github.repository }}
   DISTRO: ubuntu
-  NODE: '16 18 20 22'
+  NODE: '20 22'
   BUILD_REF: ${{ github.sha }}
   SKIP_TEST: false
   PUSH_GHCR: ${{ github.repository == (github.event.pull_request.head.repo.full_name || github.repository) && '1' || '' }}

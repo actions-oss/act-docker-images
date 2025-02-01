@@ -7,7 +7,7 @@ param(
     [Parameter(ValueFromPipeline)]
     [string]$repository = "${env:IMAGE_LABEL_REPO}",
     [Parameter(ValueFromPipeline)]
-    [string]$slug = 'actions-oss/act',
+    [string]$slug = 'actions-oss/act-minimal',
     [Parameter(ValueFromPipeline)]
     [string[]]$tags,
     [Parameter(ValueFromPipeline)]
