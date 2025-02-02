@@ -10,8 +10,6 @@ ARG FROM_IMAGE
 ARG FROM_TAG
 
 # > Our custom ARGs
-# latest Node.js LTS versions
-ARG NODE_VERSION="16 18"
 ARG DISTRO=ubuntu
 ARG TYPE=act
 ARG RUNNER
@@ -23,6 +21,7 @@ SHELL [ "bash", "--login", "-e", "-o", "pipefail", "-c" ]
 WORKDIR /tmp
 
 COPY ./linux/${DISTRO}/scripts /imagegeneration/installers
+COPY ./linux/${DISTRO}/pgp /imagegeneration/pgp
 RUN bash /imagegeneration/installers/${TYPE}.sh
 
 ARG BUILD_DATE

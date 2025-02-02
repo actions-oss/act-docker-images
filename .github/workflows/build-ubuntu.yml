@@ -21,7 +21,6 @@ env:
   IMAGE_LABEL_OWNER: ${{ github.repository_owner }}
   IMAGE_LABEL_REPO: ${{ github.repository }}
   DISTRO: ubuntu
-  NODE: '20 22'
   BUILD_REF: ${{ github.sha }}
   SKIP_TEST: false
   PUSH_GHCR: ${{ github.repository == (github.event.pull_request.head.repo.full_name || github.repository) && '1' || '' }}
@@ -39,16 +38,17 @@ jobs:
   build-base:
     name: Build base ${{ matrix.TAG }}
     if: "!contains(github.event.pull_request.body, '[skip build-base]')"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest${{ matrix.PLATFORMS == 'linux/amd64' && '' || '-arm' }}
     env:
       PLATFORMS: ${{ matrix.PLATFORMS }}
       SLUG: ${{ github.repository_owner }}/act-minimal
     strategy:
-      fail-fast: true
+      fail-fast: false
       max-parallel: 4
       matrix:
         PLATFORMS:
-          - linux/amd64,linux/arm64,linux/arm/v7
+          - linux/amd64
+          - linux/arm64,linux/arm/v7
         TAG:
           - 24.04
           - 22.04
@@ -57,11 +57,11 @@ jobs:
       - name: Disable apparmor restrictions
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: '>=1.21.0'
-
-      - uses: actions/checkout@v4
 
       - name: Setup buildah
         uses: ./.github/actions/buildah
@@ -203,7 +203,7 @@ jobs:
   build-flavours:
     name: Build ${{ matrix.TYPE }}:${{ matrix.TAG }}
     if: (!cancelled() && !failure())
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest${{ matrix.PLATFORMS == 'amd64' && '' || '-arm' }}
     needs: [build-base]
     env:
       PLATFORMS: ${{ matrix.PLATFORMS }}
@@ -215,6 +215,9 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
+        PLATFORMS:
+          - linux/amd64
+          - linux/arm64
         TAG:
           - 24.04
           - 22.04
@@ -229,31 +232,17 @@ jobs:
           - gh
           - custom
         include:
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: go
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: js
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: pwsh
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: rust
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: dotnet
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: java-tools
-          - PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
+          - PLATFORMS: linux/arm/v7
             TYPE: gh
-          - PLATFORMS: linux/amd64,linux/arm64
-            TYPE: custom
     steps:
       - name: Disable apparmor restrictions
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: '>=1.21.0'
-
-      - uses: actions/checkout@v4
 
       - name: Setup buildah
         uses: ./.github/actions/buildah

@@ -23,7 +23,7 @@ printf "\n\t🐋 Installed NVM 🐋\t\n"
 nvm --version
 
 # all latest versions are installed in act base image
-versions=()
+versions=('18' '22')
 JSON=$(wget -qO- https://nodejs.org/download/release/index.json | jq --compact-output)
 
 for V in "${versions[@]}"; do
