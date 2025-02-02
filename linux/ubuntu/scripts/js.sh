@@ -5,6 +5,8 @@ set -Eeuo pipefail
 
 . /etc/environment
 
+unset NODE_VERSION
+
 printf "\n\t🐋 Installing NVM tools 🐋\t\n"
 VERSION=$(curl -s https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r '.tag_name')
 curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$VERSION/install.sh" | bash
@@ -20,8 +22,8 @@ echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm' | tee 
 printf "\n\t🐋 Installed NVM 🐋\t\n"
 nvm --version
 
-# node 16 and 18 are already installed in act-*
-versions=("20")
+# all latest versions are installed in act base image
+versions=()
 JSON=$(wget -qO- https://nodejs.org/download/release/index.json | jq --compact-output)
 
 for V in "${versions[@]}"; do
@@ -33,7 +35,7 @@ for V in "${versions[@]}"; do
   ARCH=$(uname -m)
   if [ "$ARCH" = x86_64 ]; then ARCH=x64; fi
   if [ "$ARCH" = aarch64 ]; then ARCH=arm64; fi
-  wget -qO- "https://nodejs.org/download/release/latest-v${V}.x/node-$VER-linux-$ARCH.tar.xz" | tar -Jxf - --strip-components=1 -C "$NODEPATH"
+  wget -nv -qO- "https://nodejs.org/download/release/latest-v${V}.x/node-$VER-linux-$ARCH.tar.xz" | tar -Jxf - --strip-components=1 -C "$NODEPATH"
 
   # ENVVAR="${V//\./_}"
   # echo "${ENVVAR}=${NODEPATH}" >>/etc/environment

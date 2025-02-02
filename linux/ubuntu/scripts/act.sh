@@ -3,8 +3,6 @@
 
 set -Eeuxo pipefail
 
-printf "\n\t🐋 Build started 🐋\t\n"
-
 # Remove '"' so it can be sourced by sh/bash
 sed 's|"||g' -i "/etc/environment"
 
@@ -42,7 +40,6 @@ chown -R 1001:1000 "${ACT_TOOLSDIRECTORY}"
 mkdir -m 0777 -p /github
 chown -R 1001:1000 /github
 
-printf "\n\t🐋 Installing packages 🐋\t\n"
 packages=(
   ssh
   gawk
@@ -77,97 +74,64 @@ git --version
 
 git config --system --add safe.directory '*'
 
-wget https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh -qO- | bash
+wget -nv -O- https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
 apt-get update
 apt-get install -y git-lfs
 
 LSB_OS_VERSION="${VERSION_ID//\./}"
 echo "LSB_OS_VERSION=${LSB_OS_VERSION}" | tee -a "/etc/environment"
 
-wget -qO "/imagegeneration/toolset.json" "https://raw.githubusercontent.com/actions/virtual-environments/main/images/ubuntu/toolsets/toolset-${LSB_OS_VERSION}.json" || echo "File not available"
-wget -qO "/imagegeneration/LICENSE" "https://raw.githubusercontent.com/actions/virtual-environments/main/LICENSE"
+wget -nv -O "/imagegeneration/toolset.json" "https://raw.githubusercontent.com/actions/virtual-environments/main/images/ubuntu/toolsets/toolset-${LSB_OS_VERSION}.json" || echo "File not available"
+wget -nv -O "/imagegeneration/LICENSE" "https://raw.githubusercontent.com/actions/virtual-environments/main/LICENSE"
 
-if [ "$(uname -m)" = x86_64 ]; then
-  wget -qO "/usr/bin/jq" "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64"
-  chmod +x "/usr/bin/jq"
-fi
-
-printf "\n\t🐋 Updated apt lists and upgraded packages 🐋\t\n"
-
-printf "\n\t🐋 Creating ~/.ssh and adding 'github.com' 🐋\t\n"
 mkdir -m 0700 -p ~/.ssh
 {
-  ssh-keyscan github.com
-  ssh-keyscan ssh.dev.azure.com
+  ssh_hosts=(
+    github.com
+    gitlab.com
+    codeberg.org
+    ssh.dev.azure.com
+    sr.ht
+  )
+  for host in "${ssh_hosts[@]}"; do
+    ssh-keyscan $host
+  done
 } >>/etc/ssh/ssh_known_hosts
 
-printf "\n\t🐋 Installed base utils 🐋\t\n"
-
-printf "\n\t🐋 Installing docker cli 🐋\t\n"
 if [[ "${VERSION_ID}" == "18.04" ]]; then
   echo "deb https://packages.microsoft.com/ubuntu/${VERSION_ID}/multiarch/prod ${VERSION_CODENAME} main" | tee /etc/apt/sources.list.d/microsoft-prod.list
 else
   echo "deb https://packages.microsoft.com/ubuntu/${VERSION_ID}/prod ${VERSION_CODENAME} main" | tee /etc/apt/sources.list.d/microsoft-prod.list
 fi
-wget -q https://packages.microsoft.com/keys/microsoft.asc
+wget -nv https://packages.microsoft.com/keys/microsoft.asc
 gpg --dearmor <microsoft.asc >/etc/apt/trusted.gpg.d/microsoft.gpg
 apt-key add - <microsoft.asc
 rm microsoft.asc
 apt-get -yq update
 apt-get -yq install --no-install-recommends --no-install-suggests moby-cli moby-buildx moby-compose
 
-printf "\n\t🐋 Installed moby-cli 🐋\t\n"
 docker -v
-
-printf "\n\t🐋 Installed moby-buildx 🐋\t\n"
 docker buildx version
+
 IFS=' ' read -r -a NODE <<<"$NODE_VERSION"
 for ver in "${NODE[@]}"; do
-  printf "\n\t🐋 Installing Node.JS=%s 🐋\t\n" "${ver}"
   VER=$(curl https://nodejs.org/download/release/index.json | jq "[.[] | select(.version|test(\"^v${ver}\"))][0].version" -r)
   NODEPATH="${ACT_TOOLSDIRECTORY}/node/${VER:1}/$(node_arch)"
   mkdir -v -m 0777 -p "$NODEPATH"
-  wget "https://nodejs.org/download/release/latest-v${ver}.x/node-$VER-linux-$(node_arch).tar.xz" -O "node-$VER-linux-$(node_arch).tar.xz"
-  tar -Jxf "node-$VER-linux-$(node_arch).tar.xz" --strip-components=1 -C "$NODEPATH"
+
+  node_tarball="node-$VER-linux-$(node_arch).tar.xz"
+
+  wget -nv -O $node_tarball "https://nodejs.org/download/release/latest-v${ver}.x/${node_tarball}"
+  tar -Jxf $node_tarball --strip-components=1 -C "$NODEPATH"
   rm "node-$VER-linux-$(node_arch).tar.xz"
-  if [[ "${ver}" == "18" ]]; then  # make this version the default (latest LTS)
+  if [[ "${ver}" == "20" ]]; then # FIXME: Update when changed in GitHub
     sed "s|^PATH=|PATH=$NODEPATH/bin:|mg" -i /etc/environment
   fi
   export PATH="$NODEPATH/bin:$PATH"
 
-  printf "\n\t🐋 Installed Node.JS 🐋\t\n"
   "${NODEPATH}"/bin/node -v
-
-  printf "\n\t🐋 Installed NPM 🐋\t\n"
   "${NODEPATH}"/bin/npm -v
 done
 
-case "$(uname -m)" in
-  'aarch64')
-    scripts=(
-      yq
-    )
-    ;;
-  'x86_64')
-    scripts=(
-      yq
-    )
-    ;;
-  'armv7l')
-    scripts=(
-      yq
-    )
-    ;;
-  *) exit 1 ;;
-esac
-
-for SCRIPT in "${scripts[@]}"; do
-  printf "\n\t🧨 Executing %s.sh 🧨\t\n" "${SCRIPT}"
-  "/imagegeneration/installers/${SCRIPT}.sh"
-done
-
-printf "\n\t🐋 Cleaning image 🐋\t\n"
 apt-get clean
 rm -rf /var/cache/* /var/log/* /var/lib/apt/lists/* /tmp/* || echo 'Failed to delete directories'
-
-printf "\n\t🐋 Cleaned up image 🐋\t\n"
