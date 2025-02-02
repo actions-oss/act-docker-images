@@ -145,8 +145,8 @@ jobs:
         shell: buildah unshare pwsh "{0}"
         env:
           RUNNER: runner
-          TAG: ubuntu-${{ matrix.TAG }}
-          LATEST_TAG: ubuntu-latest
+          TAG: ubuntu-${{ matrix.TAG }}-runner
+          LATEST_TAG: ubuntu-latest-runner
           TYPE: runner
           FROM_IMAGE: ghcr.io/${{ env.SLUG }}
           FROM_TAG: ubuntu-${{ matrix.TAG }}-${{ env.PART_TAG }}
@@ -209,6 +209,7 @@ jobs:
       PLATFORMS: ${{ matrix.PLATFORMS }}
       BUILD_TAG: ${{ matrix.TYPE }}-${{ matrix.TAG }}
       TYPE: ${{ matrix.TYPE }}
+      FROM_SLUG: ${{ github.repository_owner }}/act-minimal
       SLUG: ${{ github.repository_owner }}/act-${{ matrix.TYPE }}
     strategy:
       fail-fast: false
@@ -271,6 +272,7 @@ jobs:
           github-token: n/a
           script: |
             core.exportVariable('SLUG', process.env.SLUG.toLowerCase());
+            core.exportVariable('FROM_SLUG', process.env.FROM_SLUG.toLowerCase());
 
       - name: Login to GitHub Container Registry
         if: env.PUSH_GHCR
@@ -306,7 +308,7 @@ jobs:
         env:
           TAG: ubuntu-${{ matrix.TAG }}
           LATEST_TAG: ubuntu-latest
-          FROM_IMAGE: ghcr.io/${{ env.SLUG }}
+          FROM_IMAGE: ghcr.io/${{ env.FROM_SLUG }}
           FROM_TAG: ubuntu-${{ matrix.TAG }}-${{ env.PART_TAG }}
           BUILD_TAG_VERSION: ${{ env.PART_TAG }}
           PUSH_LATEST: ${{ env.LATEST_TAG == matrix.TAG && '1' || '' }}
