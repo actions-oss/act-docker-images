@@ -307,7 +307,7 @@ jobs:
           TAG: ubuntu-${{ matrix.TAG }}
           LATEST_TAG: ubuntu-latest
           FROM_IMAGE: ghcr.io/${{ env.SLUG }}
-          FROM_TAG: act-${{ matrix.TAG }}-${{ env.PART_TAG }}
+          FROM_TAG: ubuntu-${{ matrix.TAG }}-${{ env.PART_TAG }}
           BUILD_TAG_VERSION: ${{ env.PART_TAG }}
           PUSH_LATEST: ${{ env.LATEST_TAG == matrix.TAG && '1' || '' }}
           PUSH_DEFAULT: ${{ ( github.event_name != 'pull_request' && github.event_name != 'push' && !env.ACT ) && '1' || '' }}
