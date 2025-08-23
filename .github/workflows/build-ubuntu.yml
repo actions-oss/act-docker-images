@@ -5,16 +5,16 @@ on:
     - cron: 0 12 */7 * *
   push:
     paths:
-      - '.github/workflows/build-ubuntu.yml'
-      - 'linux/ubuntu/**'
-      - 'build.ps1'
+      - ".github/workflows/build-ubuntu.yml"
+      - "linux/ubuntu/**"
+      - "build.ps1"
     branches:
-      - 'master'
+      - "master"
   pull_request:
     paths:
-      - '.github/workflows/build-ubuntu.yml'
-      - 'linux/ubuntu/**'
-      - 'build.ps1'
+      - ".github/workflows/build-ubuntu.yml"
+      - "linux/ubuntu/**"
+      - "build.ps1"
   workflow_dispatch:
 
 env:
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.matrix-base.outputs.matrix) }}
     steps:
       - name: Disable apparmor restrictions
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
@@ -64,7 +64,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version: ">=1.21.0"
 
       - name: Setup buildah
         uses: ./.github/actions/buildah
@@ -188,7 +188,7 @@ jobs:
       - if: ${{ !env.SKIP_TEST }}
         uses: actions/setup-go@v3
         with:
-          go-version: '^1.16'
+          go-version: "^1.16"
 
       - if: ${{ !env.SKIP_TEST }}
         uses: actions/checkout@v3
@@ -245,7 +245,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version: ">=1.21.0"
 
       - name: Setup buildah
         uses: ./.github/actions/buildah

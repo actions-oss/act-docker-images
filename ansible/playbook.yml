@@ -146,6 +146,7 @@
               github.com,
               gitea.com,
               gitlab.com,
+              sr.ht,
               ssh.dev.azure.com,
             ]
         - name: Print all available facts

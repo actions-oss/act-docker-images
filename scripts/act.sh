@@ -8,7 +8,6 @@ sed 's|"||g' -i "/etc/environment"
 
 . /etc/os-release
 
-APT_FLAGS="--assume-yes"
 WGET_FLAGS="--no-verbose"
 
 node_arch() {
@@ -39,13 +38,8 @@ tee <<-EOF >>/etc/environment
 	ACT_TOOLSDIRECTORY=${ACT_TOOLSDIRECTORY}
 EOF
 
-mkdir -m 0777 -p "${AGENT_TOOLSDIRECTORY}"
-chown -R 1001:1000 "${AGENT_TOOLSDIRECTORY}"
-mkdir -m 0777 -p "${ACT_TOOLSDIRECTORY}"
-chown -R 1001:1000 "${ACT_TOOLSDIRECTORY}"
-
-mkdir -m 0777 -p /github
-chown -R 1001:1000 /github
+mkdir -m 0777 -p "${AGENT_TOOLSDIRECTORY}" "${ACT_TOOLSDIRECTORY}" /github
+chown -R 1001:1000 "${AGENT_TOOLSDIRECTORY}" "${ACT_TOOLSDIRECTORY}" /github
 
 packages=(
   openssh-client
@@ -61,8 +55,8 @@ packages=(
   xz-utils
 )
 
-apt-get "${APT_FLAGS}" update
-apt-get "${APT_FLAGS}" install "${packages[@]}"
+apt-get update
+apt-get install "${packages[@]}"
 
 ln -s "$(which python3)" "/usr/local/bin/python"
 
@@ -70,17 +64,17 @@ tee <<-EOF >/etc/apt/sources.list.d/00-git-core.list
 	deb https://ppa.launchpadcontent.net/git-core/ppa/ubuntu ${VERSION_CODENAME} main
 	deb-src https://ppa.launchpadcontent.net/git-core/ppa/ubuntu ${VERSION_CODENAME} main
 EOF
-mv /imagegeneration/pgp/git-core.asc /etc/apt/trusted.gpg.d/git-core.asc
-apt-get "${APT_FLAGS}" update
-apt-get "${APT_FLAGS}" install git
+
+apt-get update
+apt-get install git
 
 git --version
 
 git config --system --add safe.directory '*'
 
 wget "${WGET_FLAGS}" -qO- https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
-apt-get "${APT_FLAGS}" update
-apt-get "${APT_FLAGS}" install git-lfs
+apt-get update
+apt-get install git-lfs
 
 wget "${WGET_FLAGS}" -O "/imagegeneration/toolset.json" "https://raw.githubusercontent.com/actions/virtual-environments/main/images/ubuntu/toolsets/toolset-${LSB_OS_VERSION}.json" || echo "File not available"
 wget "${WGET_FLAGS}" -O "/imagegeneration/LICENSE" "https://raw.githubusercontent.com/actions/virtual-environments/main/LICENSE"
@@ -106,10 +100,8 @@ mkdir -m 0700 -p ~/.ssh
   esac
 } | tee /etc/apt/sources.list.d/microsoft-prod.list
 
-mv /imagegeneration/pgp/microsoft.asc /etc/apt/trusted.gpg.d/microsoft.asc
-
-apt-get "${APT_FLAGS}" update
-apt-get "${APT_FLAGS}" install --no-install-recommends --no-install-suggests moby-cli moby-buildx moby-compose
+apt-get update
+apt-get install --no-install-recommends --no-install-suggests moby-cli moby-buildx moby-compose
 
 docker -v
 docker buildx version
@@ -131,5 +123,5 @@ export PATH="$NODEPATH/bin:$PATH"
 node -v
 npm -v
 
-apt-get "${APT_FLAGS}" clean
+apt-get clean
 rm -rf /var/cache/* /var/log/* /var/lib/apt/lists/* /tmp/* || echo 'Failed to delete directories'
