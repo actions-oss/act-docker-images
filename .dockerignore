@@ -1,2 +1,8 @@
 .github
 .git
+.vscode
+.zed
+.lapce
+ansible
+packer
+docker

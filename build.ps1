@@ -1,41 +1,41 @@
 #!/usr/bin/pwsh
 param(
     [Parameter(ValueFromPipeline)]
-    [string]$runtime = "buildah",
+    [string]$Runtime = "buildah",
     [Parameter(ValueFromPipeline)]
-    [string]$progress,
+    [string]$Progress,
     [Parameter(ValueFromPipeline)]
-    [string]$owner = "${env:IMAGE_LABEL_OWNER}",
+    [string]$BuildOwner = "${env:IMAGE_LABEL_OWNER}",
     [Parameter(ValueFromPipeline)]
-    [string]$repository = "${env:IMAGE_LABEL_REPO}",
+    [string]$BuildRepository = "${env:IMAGE_LABEL_REPO}",
     [Parameter(ValueFromPipeline)]
-    [string]$slug = 'actions-oss/act-minimal',
+    [string]$Slug = 'actions-oss/act-minimal',
     [Parameter(ValueFromPipeline)]
     [string[]]$tags,
     [Parameter(ValueFromPipeline)]
-    [string]$tag,
+    [string]$Tag,
     [Parameter(ValueFromPipeline)]
-    [string]$distro = 'ubuntu',
+    [string]$BuildDistro = 'ubuntu',
     [Parameter(ValueFromPipeline)]
-    [string]$type = "${env:TYPE}",
+    [string]$Type = "${env:TYPE}",
     [Parameter(ValueFromPipeline)]
-    [string]$runner = "${env:RUNNER}",
+    [string]$BuildRunnerUser = "${env:RUNNER}",
     [Parameter(ValueFromPipeline)]
-    [string]$image = 'ubuntu',
+    [string]$Image = 'ubuntu',
     [Parameter(ValueFromPipeline)]
-    [string]$platforms = "${env:PLATFORMS}",
+    [string]$Platforms = "${env:PLATFORMS}",
     [Parameter(ValueFromPipeline)]
-    [string]$build_tag = "${env:BUILD_TAG}",
+    [string]$BuildTag = "${env:BUILD_TAG}",
     [Parameter(ValueFromPipeline)]
-    [string]$build_tag_version = "${env:BUILD_TAG_VERSION}",
+    [string]$BuildTagVersion = "${env:BUILD_TAG_VERSION}",
     [Parameter(ValueFromPipeline)]
-    [string]$build_ref = "${env:BUILD_REF}",
+    [string]$BuildRef = "${env:BUILD_REF}",
     [Parameter(ValueFromPipeline)]
-    [string]$from_image = "${env:FROM_IMAGE}",
+    [string]$FromImage = "${env:FROM_IMAGE_NAME}",
     [Parameter(ValueFromPipeline)]
-    [string]$from_tag = "${env:FROM_TAG}",
+    [string]$FromTag = "${env:FROM_IMAGE_TAG}",
     [Parameter(ValueFromPipeline)]
-    [switch]$push
+    [switch]$Push
 )
 
 switch ($runtime) {
@@ -80,18 +80,18 @@ function buildah_runtime() {
             "build",
             "--ulimit=nofile=4096:4096",
             "--platform=${platform}",
-            "--build-arg=DISTRO=${distro}",
-            "--build-arg=TYPE=${type}",
-            "--build-arg=RUNNER=${runner}",
+            "--build-arg=BUILD_DISTRO=${distro}",
+            "--build-arg=BUILD_TYPE=${type}",
+            "--build-arg=BUILD_RUNNER_USER=${runner}",
             "--build-arg=BUILD_DATE=$((Get-Date).ToString('u'))",
             "--build-arg=BUILD_OWNER=${owner}",
             "--build-arg=BUILD_REPO=${repository}",
             "--build-arg=BUILD_TAG=${build_tag}",
             "--build-arg=BUILD_TAG_VERSION=${build_tag_version}",
             "--build-arg=BUILD_REF=${build_ref}",
-            "--build-arg=FROM_IMAGE=${from_image}",
-            "--build-arg=FROM_TAG=${from_tag}",
-            "--file=./linux/${image}/Dockerfile",
+            "--build-arg=FROM_IMAGE_NAME=${from_image}",
+            "--build-arg=FROM_IMAGE_TAG=${from_tag}",
+            "--file=./${image}/Dockerfile",
             "--tag=${intermediatetag}",
             "--format=docker",
             '.'

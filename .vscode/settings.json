@@ -1,0 +1,15 @@
+{
+  "[hcl]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[shellscript]": {
+    "files.eol": "\n",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+  }
+}

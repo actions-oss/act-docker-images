@@ -1,0 +1,192 @@
+- name: Build
+  hosts: all
+  tasks:
+    - name: Create base structure
+      block:
+        - name: Create hosted tool cache
+          ansible.builtin.file:
+            path: /opt/hostedtoolcache
+            state: directory
+            mode: "0777"
+            group: 1000
+            owner: 1001
+            recurse: true
+
+        - name: Create act tool cache
+          ansible.builtin.file:
+            path: /opt/acttoolcache
+            state: directory
+            mode: "0777"
+            group: 1000
+            owner: 1001
+            recurse: true
+
+        - name: Create github root
+          ansible.builtin.file:
+            path: /github
+            state: directory
+            mode: "0777"
+            group: 1000
+            owner: 1001
+            recurse: true
+
+    - name: Install required packages
+      block:
+        - name: Install APT dependencies
+          when: ansible_facts['os_family'] == "Debian"
+          ansible.builtin.package:
+            name:
+              [
+                gnupg2,
+                ca-certificates,
+                apt-transport-https,
+                software-properties-common,
+                python3-debian,
+              ]
+            state: present
+
+        - name: Add Docker repo
+          when: ansible_facts['os_family'] == "Debian"
+          deb822_repository:
+            name: microsoft
+            types: [deb]
+            enabled: true
+            uris: https://packages.microsoft.com/ubuntu/{{ ansible_distribution_version }}/prod
+            suites: "{{ ansible_distribution_release }}"
+            components: main
+            signed_by: https://packages.microsoft.com/keys/microsoft-rolling.asc
+
+        - name: Add git-core PPA
+          when: ansible_facts['os_family'] == "Debian"
+          ansible.builtin.apt_repository:
+            repo: "ppa:git-core/ppa"
+
+        - name: Add git-core PPA
+          when: ansible_facts['os_family'] == "Debian"
+          deb822_repository:
+            name: git-lfs
+            types: [deb, deb-src]
+            enabled: true
+            uris: https://packagecloud.io/github/git-lfs/ubuntu
+            suites: "{{ ansible_distribution_release }}"
+            components: stable
+            signed_by: https://packagecloud.io/github/git-lfs/gpgkey
+
+        - name: Shared
+          ansible.builtin.package:
+            name:
+              [gawk, git, git-lfs, curl, jq, yq, zstd, zip, unzip, wget, pipx]
+            state: present
+
+        - name: Debian family
+          when: ansible_facts['os_family'] == "Debian"
+          ansible.builtin.apt:
+            autoclean: true
+            autoremove: true
+            clean: true
+            install_recommends: false
+            update_cache: true
+            state: present
+            name:
+              [
+                gnupg-agent,
+                libyaml-0-2,
+                moby-cli,
+                moby-buildx,
+                moby-compose,
+                python3-pip,
+                python3-venv,
+                python-is-python3,
+                xz-utils,
+                ssh,
+                sudo,
+              ]
+
+        - name: RedHat family
+          when: ansible_facts['os_family'] == "RedHat"
+          ansible.builtin.dnf:
+            name:
+              [
+                gnupg-agent,
+                ca-certificates,
+                libyaml-0-2,
+                python3-pip,
+                python3-venv,
+                xz-utils,
+                ssh,
+                sudo,
+              ]
+
+        - name: Alpine family
+          when: ansible_facts['os_family'] == "Alpine"
+          ansible.builtin.apk:
+            name:
+              [
+                docker-cli,
+                docker-cli-buildx,
+                docker-cli-compose,
+                openssh-client,
+                doas,
+                gpg-agent,
+                ca-certificates,
+                xz,
+                py3-pip,
+                py3-virtualenv,
+              ]
+
+    - name: Save public keys for remote hosts
+      block:
+        - name: Keyscan public SSH hosts
+          ansible.builtin.command: ssh-keyscan "{{ item }}"
+          register: ssh_keyscan
+          loop:
+            [
+              codeberg.org,
+              forgejo.org,
+              github.com,
+              gitea.com,
+              gitlab.com,
+              ssh.dev.azure.com,
+            ]
+        - name: Print all available facts
+          loop: "{{ ssh_keyscan.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+          ansible.builtin.debug:
+            var: item
+        - name: Save SSH keyscan output
+          loop: "{{ ssh_keyscan.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+          ansible.builtin.blockinfile:
+            marker: "# {mark} {{ item.item }} ANSIBLE MANAGED BLOCK"
+            path: /etc/ssh/ssh_known_hosts
+            create: true
+            append_newline: true
+            prepend_newline: false
+            block: "{{ item.stdout }}"
+
+    - name: Clean-up
+      block:
+        - name: Debian family
+          when: ansible_facts['os_family'] == "Debian"
+          ansible.builtin.apt:
+            autoclean: true
+            autoremove: true
+            clean: true
+        - name: Remove APT state
+          ansible.builtin.file:
+            path: /var/lib/apt/lists
+            state: absent
+        - name: Remove cache
+          ansible.builtin.file:
+            path: /var/cache
+            state: absent
+        - name: Remove logs
+          ansible.builtin.file:
+            path: /var/log
+            state: absent
+        - name: Remove temporary files
+          ansible.builtin.file:
+            path: /tmp
+            state: absent
