@@ -1,0 +1,39 @@
+name: Install build tools
+description: 'Install build tools'
+runs:
+  using: composite
+  steps:
+    - name: buildah
+      shell: sh
+      run: |
+          sudo apt-get -y -qq update
+          sudo apt-get -y install bats btrfs-progs git go-md2man golang libapparmor-dev libglib2.0-dev libgpgme11-dev libseccomp-dev libselinux1-dev make skopeo
+          git clone https://github.com/containers/buildah buildah
+          git -C buildah checkout v1.38.0
+          make -C buildah buildah
+          sudo mkdir -p /usr/local/bin/
+          sudo cp "$PWD/buildah/bin"/* /usr/local/bin/
+
+    - name: netavark
+      shell: sh
+      run: |
+          curl -L https://github.com/containers/netavark/releases/download/v1.13.1/netavark.gz --output netavark.gz
+          gzip -d netavark.gz
+          chmod +x netavark
+          sudo mkdir -p /usr/local/libexec/podman/
+          sudo mv netavark /usr/local/libexec/podman/
+
+    - name: crun
+      shell: sh
+      run: |
+          curl -L https://github.com/containers/crun/releases/download/1.19.1/crun-1.19.1-linux-amd64 --output crun
+          chmod +x crun
+          sudo cp crun /usr/local/bin/crun
+          echo "BUILDAH_RUNTIME=/usr/local/bin/crun" >> $GITHUB_ENV
+
+    - name: passt
+      shell: sh
+      run: |
+          git clone https://passt.top/passt
+          make -C passt
+          sudo make -C passt install
